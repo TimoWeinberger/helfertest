@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helfereinsatz Monitor</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 30px; background-color: #f9f9f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #eee; padding: 12px; text-align: left; }
+        th { background-color: #007bff; color: white; }
+        button { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #218838; }
+        .error { color: #d9534f; background: #fdf7f7; border: 1px solid #d9534f; padding: 10px; margin-top: 20px; border-radius: 4px; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Helfereinsatz Daten abrufen</h2>
+    <p>Klicke auf den Button, um die aktuelle Helferliste zu laden.</p>
+    
+    <button id="fetchBtn">Daten jetzt laden</button>
+
+    <div id="errorBox" class="error"></div>
+
+    <table id="helperTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>Vorname</th>
+                <th>Nachname</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<script>
+    document.getElementById('fetchBtn').addEventListener('click', async () => {
+        const apiKey = 'DEIN_ECHTER_API_KEY'; // <-- Hier deinen Key eintragen
+        const url = 'https://api.helfereinsatz.ch/v1/mcc-frankenbach-e.v/helpers/1';
+        
+        const errorBox = document.getElementById('errorBox');
+        const table = document.getElementById('helperTable');
+        const tbody = document.getElementById('tableBody');
+
+        // Reset
+        errorBox.style.display = 'none';
+        table.style.display = 'none';
+        tbody.innerHTML = '';
+
+        try {
+            const response = await fetch(url, {
+                method: 'GET',
+                mode: 'cors', // Erzwingt den CORS-Modus
+                headers: {
+                    'X-API-KEY': apiKey,
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server-Antwort: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            
+            // Falls die Daten in einem "data" Feld liegen:
+            const helpers = result.data || result; 
+
+            if (helpers.length === 0) {
+                errorBox.innerText = "Keine Daten gefunden.";
+                errorBox.style.display = 'block';
+                return;
+            }
+
+            helpers.forEach(h => {
+                const row = `<tr><td>${h.firstname || ''}</td><td>${h.lastname || ''}</td></tr>`;
+                tbody.innerHTML += row;
+            });
+
+            table.style.display = 'table';
+
+        } catch (err) {
+            console.error("Fetch-Fehler:", err);
+            errorBox.innerText = "Verbindung fehlgeschlagen: " + err.message + 
+                                 "\n\nHinweis: Wenn du die Datei lokal öffnest, blockiert der Browser die Anfrage (CORS).";
+            errorBox.style.display = 'block';
+        }
+    });
+</script>
+
+</body>
+</html>
